@@ -9,7 +9,7 @@ namespace BoatAttack.Telemetry
     public static class DemoTelemetry
     {
         public const string LevelId = "island";
-        public const string Version = "boatattack-tf-0.2.0";
+        public const string Version = "boatattack-tf-0.2.1";
         public static bool Autoplay => Array.Exists(Environment.GetCommandLineArgs(), a => a == "--tf-demo-autoplay");
 
         [Serializable]

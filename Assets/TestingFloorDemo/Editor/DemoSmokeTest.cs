@@ -94,7 +94,7 @@ namespace BoatAttack.Telemetry.Editor
             var success = _raceStarted && _distance > 50f && _maxLap >= 1
                 && _maxTrackedOpponents == expectedOpponents && OpponentDistances.Count == expectedOpponents
                 && OpponentDistances.Values.All(distance => distance > 50f)
-                && _resetOpponent && Version.Parse(sdkVersion) >= new Version(0, 4, 1) && Tf.DroppedEventCount == 0;
+                && _resetOpponent && Version.Parse(sdkVersion) >= new Version(0, 4, 3) && Tf.DroppedEventCount == 0;
             File.WriteAllText("Artifacts/smoke-result.json", JsonUtility.ToJson(new SmokeResult
             {
                 success = success, opponentReset = _resetOpponent, sdkVersion = sdkVersion, sessionId = Tf.PlaySessionId,

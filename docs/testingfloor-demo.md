@@ -1,6 +1,6 @@
 # Unity integration reference
 
-This guide follows the Testing Floor integration in Boat Attack. Use it alongside [BoatTelemetry.cs](../Assets/TestingFloorDemo/BoatTelemetry.cs), which contains most of the example, and the [Unity SDK documentation](https://github.com/capitalisminc/testingfloor-sdk-unity/blob/af5d3ce8414265701d68eb1165b50045eb20bb29/README.md) for the full API.
+This guide follows the Testing Floor integration in Boat Attack. Use it alongside [BoatTelemetry.cs](../Assets/TestingFloorDemo/BoatTelemetry.cs), which contains most of the example, and the [Unity SDK documentation](https://github.com/capitalisminc/testingfloor-sdk-unity/blob/09a1f1e1c1379e5f851c3560ab00f4a3fa971d82/README.md) for the full API.
 
 For instructions to play the game or connect your write key, start with the [README](../README.md).
 
@@ -150,7 +150,7 @@ The session timeline uses event timestamps. `race.elapsed_s` remains a gameplay 
 
 When the Testing Floor recorder launches the game with a recording session, the SDK uses that handoff to associate telemetry with the recording. You can move from an interesting event or location to the corresponding footage.
 
-For external captures, the local example settings enable QR heartbeats. The visible QR gives Testing Floor timing information to align video and events. See the SDK’s [recording sync documentation](https://github.com/capitalisminc/testingfloor-sdk-unity/blob/af5d3ce8414265701d68eb1165b50045eb20bb29/README.md#recording-sync) for the available controls.
+For external captures, the local example settings enable QR heartbeats. The visible QR gives Testing Floor timing information to align video and events. See the SDK’s [recording sync documentation](https://github.com/capitalisminc/testingfloor-sdk-unity/blob/09a1f1e1c1379e5f851c3560ab00f4a3fa971d82/README.md#recording-sync) for the available controls.
 
 ## Adapt the example
 
