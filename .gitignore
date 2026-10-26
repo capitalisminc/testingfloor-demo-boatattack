@@ -49,3 +49,23 @@ SerializedBuildInfo
 SwitchIL2CPP*
 Assets/ActualImages*
 Packages/packages-lock.json
+
+# Testing Floor local credentials and generated demo artifacts
+/TestingFloor.local.json
+/Assets/Resources/TestingFloorSettings.asset
+/Assets/Resources/TestingFloorSettings.asset.meta
+/Artifacts/
+
+# Local Addressables build output
+/Assets/AddressableAssetsData/OSX/
+/Assets/AddressableAssetsData/OSX.meta
+/Assets/AddressableAssetsData/link.xml
+/Assets/AddressableAssetsData/link.xml.meta
+
+# Local credentials
+/.env
+/.env.*
+!/.env.example
+
+/Assets/AddressableAssetsData/Windows/
+/Assets/AddressableAssetsData/Windows.meta

@@ -1,0 +1,29 @@
+{
+  "version": "boatattack-tf-0.1.0",
+  "sourceRef": {
+    "build_configuration": "release",
+    "development": false,
+    "unity_version": "6000.3.7f1",
+    "scripting_backend": "Mono"
+  },
+  "builds": [
+    {
+      "platform": "macos",
+      "buildDirectory": "./Builds/Release/macOS",
+      "filename": "BoatAttack-macOS.zip",
+      "launchPath": "BoatAttack.app",
+      "sourceRef": {
+        "architecture": "universal"
+      }
+    },
+    {
+      "platform": "windows",
+      "buildDirectory": "./Builds/Release/Windows",
+      "filename": "BoatAttack-Windows.zip",
+      "launchPath": "BoatAttack.exe",
+      "sourceRef": {
+        "architecture": "x86_64"
+      }
+    }
+  ]
+}

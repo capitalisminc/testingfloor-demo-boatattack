@@ -50,6 +50,7 @@ namespace BoatAttack
         private void FreezeBoat(InputAction.CallbackContext context)
         {
             _paused = !_paused;
+            controller.GetComponent<Telemetry.BoatTelemetry>()?.PauseChanged(_paused);
             if(_paused)
             {
                 Time.timeScale = 0f;

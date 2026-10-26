@@ -1,0 +1,8 @@
+{
+  "writeKey": "",
+  "endpoint": "https://dataentry.testingfloor.com",
+  "enableInEditor": true,
+  "qrHeartbeats": true,
+  "organizationId": "YOUR_ORGANIZATION",
+  "gameId": 0
+}

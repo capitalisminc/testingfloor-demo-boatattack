@@ -1,0 +1,453 @@
+{
+  "map_id_path": "level.id",
+  "app_version_path": "tf_context.app_version",
+  "spatial_sources": {
+    "player_position": {
+      "x": "player.position.x",
+      "y": "player.position.y",
+      "z": "player.position.z"
+    },
+    "collision_position": {
+      "x": "collision.position.x",
+      "y": "collision.position.y",
+      "z": "collision.position.z"
+    }
+  },
+  "common_field_prefixes": [
+    "camera.",
+    "viewport.",
+    "movement.",
+    "app.",
+    "player.position.",
+    "teleport.start.",
+    "teleport.end.",
+    "race.id"
+  ],
+  "topline_keys": [
+    {
+      "key": "race.lap",
+      "label": "Lap"
+    },
+    {
+      "key": "race.place",
+      "label": "Race position"
+    },
+    {
+      "key": "boat.speed_mps",
+      "label": "Speed (m/s)"
+    },
+    {
+      "key": "demo.control_mode",
+      "label": "Control mode"
+    }
+  ],
+  "event_rules": [
+    {
+      "event_types": [
+        "race_loaded"
+      ],
+      "name": "Race loaded",
+      "template": "generic",
+      "style": {
+        "icon": "map-location-dot",
+        "background": "blue",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Laps",
+          "path": "race.lap_count"
+        },
+        {
+          "label": "Boats",
+          "path": "race.boat_count"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "race_started"
+      ],
+      "name": "Race started",
+      "template": "generic",
+      "style": {
+        "icon": "flag",
+        "background": "green",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Laps",
+          "path": "race.lap_count"
+        },
+        {
+          "label": "Boats",
+          "path": "race.boat_count"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "race_completed"
+      ],
+      "name": "Race finished",
+      "template": "generic",
+      "style": {
+        "icon": "flag-checkered",
+        "background": "green",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Position",
+          "path": "race.place"
+        },
+        {
+          "label": "Time (s)",
+          "path": "race.duration_s"
+        },
+        {
+          "label": "Collisions",
+          "path": "race.collision_count"
+        },
+        {
+          "label": "Resets",
+          "path": "race.reset_count"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "race_abandoned"
+      ],
+      "name": "Race ended early",
+      "template": "generic",
+      "style": {
+        "icon": "stop",
+        "background": "amber",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        },
+        {
+          "label": "Position",
+          "path": "race.place"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "checkpoint_reached"
+      ],
+      "name": "Checkpoint reached",
+      "template": "generic",
+      "style": {
+        "icon": "flag",
+        "background": "blue",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Checkpoint",
+          "path": "checkpoint.index"
+        },
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        },
+        {
+          "label": "Position",
+          "path": "race.place"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "lap_completed"
+      ],
+      "name": "Lap completed",
+      "template": "generic",
+      "style": {
+        "icon": "flag-checkered",
+        "background": "teal",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Lap",
+          "path": "lap.number"
+        },
+        {
+          "label": "Time (s)",
+          "path": "lap.duration_s"
+        },
+        {
+          "label": "Position",
+          "path": "race.place"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "lap_rejected"
+      ],
+      "name": "Lap not counted",
+      "template": "generic",
+      "style": {
+        "icon": "triangle-exclamation",
+        "background": "amber",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Checkpoints passed",
+          "path": "checkpoint.completed"
+        },
+        {
+          "label": "Checkpoints required",
+          "path": "checkpoint.required"
+        },
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "boat_collision"
+      ],
+      "name": "Collision with another boat",
+      "template": "generic",
+      "style": {
+        "icon": "triangle-exclamation",
+        "background": "orange",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Impact (m/s)",
+          "path": "collision.relative_speed_mps"
+        },
+        {
+          "label": "Speed (m/s)",
+          "path": "boat.speed_mps"
+        },
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        }
+      ],
+      "when": {
+        "path": "collision.kind",
+        "op": "equals",
+        "value": "boat"
+      }
+    },
+    {
+      "event_types": [
+        "boat_collision"
+      ],
+      "name": "Hit scenery",
+      "template": "generic",
+      "style": {
+        "icon": "triangle-exclamation",
+        "background": "red",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Impact (m/s)",
+          "path": "collision.relative_speed_mps"
+        },
+        {
+          "label": "Speed (m/s)",
+          "path": "boat.speed_mps"
+        },
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        }
+      ],
+      "when": {
+        "path": "collision.kind",
+        "op": "equals",
+        "value": "environment"
+      }
+    },
+    {
+      "event_types": [
+        "boat_collision"
+      ],
+      "name": "Boat collision",
+      "template": "generic",
+      "style": {
+        "icon": "triangle-exclamation",
+        "background": "red",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Impact (m/s)",
+          "path": "collision.relative_speed_mps"
+        },
+        {
+          "label": "Speed (m/s)",
+          "path": "boat.speed_mps"
+        },
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "boat_off_course"
+      ],
+      "name": "Left the race course",
+      "template": "generic",
+      "style": {
+        "icon": "triangle-exclamation",
+        "background": "amber",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Distance from course (m)",
+          "path": "course.distance_m"
+        },
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "boat_returned_to_course"
+      ],
+      "name": "Returned to the course",
+      "template": "generic",
+      "style": {
+        "icon": "circle-check",
+        "background": "teal",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "boat_reset"
+      ],
+      "name": "Boat reset",
+      "template": "generic",
+      "style": {
+        "icon": "rotate-left",
+        "background": "violet",
+        "noise": false
+      },
+      "metadata": [
+        {
+          "label": "Reset distance (m)",
+          "path": "reset.distance_m"
+        },
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "player_teleported"
+      ],
+      "name": "Position reset",
+      "template": "generic",
+      "style": {
+        "icon": "rotate-left",
+        "background": "muted",
+        "noise": true
+      },
+      "metadata": [
+        {
+          "label": "Distance (m)",
+          "path": "teleport.distance"
+        }
+      ]
+    },
+    {
+      "event_types": [
+        "game_paused"
+      ],
+      "name": "Paused",
+      "template": "generic",
+      "style": {
+        "icon": "pause",
+        "background": "muted",
+        "noise": false
+      }
+    },
+    {
+      "event_types": [
+        "game_resumed"
+      ],
+      "name": "Resumed",
+      "template": "generic",
+      "style": {
+        "icon": "play",
+        "background": "muted",
+        "noise": false
+      }
+    },
+    {
+      "event_types": [
+        "player_moved"
+      ],
+      "name": "Boat movement",
+      "template": "generic",
+      "style": {
+        "icon": "gauge",
+        "background": "muted",
+        "noise": true
+      },
+      "metadata": [
+        {
+          "label": "Speed (m/s)",
+          "path": "boat.speed_mps"
+        },
+        {
+          "label": "Lap",
+          "path": "race.lap"
+        },
+        {
+          "label": "Position",
+          "path": "race.place"
+        }
+      ]
+    }
+  ],
+  "environment_paths": {
+    "build_version": [
+      "tf_context.app_version",
+      "app.version"
+    ],
+    "platform": [
+      "tf_context.os"
+    ],
+    "engine": [
+      "tf_context.engine"
+    ],
+    "system_language": [
+      "tf_context.locale"
+    ]
+  }
+}

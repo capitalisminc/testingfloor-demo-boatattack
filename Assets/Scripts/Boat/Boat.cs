@@ -58,10 +58,12 @@ namespace BoatAttack
         {
             _playerIndex = player - 1;
             cam.gameObject.layer = LayerMask.NameToLayer("Player" + player); // assign player layer
-            SetupController(isHuman); // create or change controller
+            SetupController(isHuman && !Telemetry.DemoTelemetry.Autoplay); // create or change controller
             Colorize(livery);
             _completedCheckpointsThisLap = new SortedSet<int>();
             _allCheckPoints = WaypointGroup.Instance.GetCheckpointIndices();
+            if (isHuman && player == 1 && !TryGetComponent<Telemetry.BoatTelemetry>(out _))
+                gameObject.AddComponent<Telemetry.BoatTelemetry>();
         }
 
         private void SwitchToAiController()
@@ -152,19 +154,28 @@ namespace BoatAttack
             bool atStartLine = wpIndex == 0;
             bool lapZero = LapCount == 0;
 
+            var telemetry = GetComponent<Telemetry.BoatTelemetry>();
             if (wp.isCheckpoint)
-                _completedCheckpointsThisLap.Add(wpIndex);
+            {
+                var firstVisit = _completedCheckpointsThisLap.Add(wpIndex);
+                telemetry?.Checkpoint(wpIndex, firstVisit);
+            }
 
             // Did lap finish ?
             if (atStartLine)
             {
                 bool succesfulLap = _completedCheckpointsThisLap.SetEquals(_allCheckPoints) || (lapZero);
-                _completedCheckpointsThisLap.Clear();
                 if (!succesfulLap)
+                {
+                    telemetry?.LapRejected(_completedCheckpointsThisLap.Count, _allCheckPoints.Count);
+                    _completedCheckpointsThisLap.Clear();
                     return;
+                }
+                _completedCheckpointsThisLap.Clear();
                 
                 LapCount++;
                 SplitTimes.Add(RaceManager.RaceTime);
+                telemetry?.LapCrossed(LapCount);
 
                 if (LapCount <= RaceManager.GetLapCount()) return;
 
@@ -209,12 +220,14 @@ namespace BoatAttack
             if (WaypointGroup.Instance)
             {
                 var resetMatrix = WaypointGroup.Instance.GetClosestPointOnWaypoint(transform.position);
+                var previousPosition = engine.RB.position;
                 var resetPoint = resetMatrix.GetPosition();
                 resetPoint.y = _spawnHeight;
                 engine.RB.linearVelocity = Vector3.zero;
                 engine.RB.angularVelocity = Vector3.zero;
                 engine.RB.position = resetPoint;
                 engine.RB.rotation = resetMatrix.rotation;
+                GetComponent<Telemetry.BoatTelemetry>()?.ResetBoat(previousPosition, resetPoint);
             }
         }
 

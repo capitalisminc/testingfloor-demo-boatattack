@@ -1,3 +1,13 @@
+# Boat Attack × Testing Floor
+
+This is a [Testing Floor](https://testingfloor.com) demo fork of [Unity’s Boat Attack](https://github.com/Unity-Technologies/BoatAttack), instrumented to demonstrate gameplay capture, SDK telemetry, and spatial analytics in a playable Unity game.
+
+The fork adds race, lap, checkpoint, collision, and movement events, an island map exporter, and reusable analytics presentation settings. The original game credits remain below, and the [Unity Companion License](LICENSE.md) is unchanged.
+
+See [the demo guide](docs/testingfloor-demo.md) for local setup, events, map export, and build instructions. This fork uses Unity **6000.3.7f1** and pins the Testing Floor SDK to a published commit.
+
+---
+
 **_Note:This repository uses GitLFS, to use this repo you need to pull via Git and make sure GitLFS is installed locally_**
 
 # Boat Attack
