@@ -2,7 +2,7 @@
 
 A playable reference for integrating [Testing Floor](https://testingfloor.com) into a Unity game, based on [Unity’s Boat Attack](https://github.com/Unity-Technologies/BoatAttack).
 
-Follow a race from gameplay events to spatial analytics and the corresponding recording. The example covers movement sampling, shared game context, checkpoints, lap times, collisions, resets, and an overhead map of the island.
+Follow a race from gameplay events to spatial analytics and the corresponding recording. The example covers movement sampling, shared game context, session state, checkpoints, lap times, collisions, resets, and an overhead map of the island. The other boats have labeled paths and changing race state, so you can follow the whole field alongside the player.
 
 ## Play the game
 
@@ -31,7 +31,9 @@ The local settings file is already ignored by Git. The SDK is included in the pr
 | Start here | What it demonstrates |
 | --- | --- |
 | [BoatTelemetry.cs](Assets/TestingFloorDemo/BoatTelemetry.cs) | Track gameplay events and attach race state, player position, and camera context |
-| [DemoTelemetry.cs](Assets/TestingFloorDemo/DemoTelemetry.cs) | Configure the SDK and tune movement sampling for a fast-moving boat |
+| [OpponentBoatTelemetry.cs](Assets/TestingFloorDemo/OpponentBoatTelemetry.cs) | Track the other boats with stable IDs, labels, lap counts, and race positions |
+| [RaceTelemetryState.cs](Assets/TestingFloorDemo/RaceTelemetryState.cs) | Send settings and race setup once, then update them only when they change |
+| [DemoTelemetry.cs](Assets/TestingFloorDemo/DemoTelemetry.cs) | Configure the SDK and tune player and object sampling for fast-moving boats |
 | [Boat.cs](Assets/Scripts/Boat/Boat.cs) | Connect telemetry to existing checkpoint, lap, and reset logic |
 | [DemoTools.cs](Assets/TestingFloorDemo/Editor/DemoTools.cs) | Export an overhead image with the world bounds needed to align analytics |
 | [testingfloor-telemetry-schema.json](testingfloor-telemetry-schema.json) | Give events readable names and map gameplay properties to analytics |
@@ -42,6 +44,7 @@ The [integration guide](docs/testingfloor-demo.md) walks through these patterns 
 
 - Find the corners with the most collisions, then inspect the recordings to see what happened.
 - Compare boat speed around the island using a heatmap of movement events.
+- Follow the opponent paths to see which boat was alongside the player during an overtake or collision.
 - Look at missed checkpoints, rejected laps, and resets to find where players lose their way.
 
 ## About Boat Attack

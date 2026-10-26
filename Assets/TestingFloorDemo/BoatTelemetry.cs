@@ -1,7 +1,7 @@
 using System;
-using TestingFloor;
+using TestingFloorSdk;
 using UnityEngine;
-using Tf = TestingFloor.TestingFloor;
+using Tf = TestingFloorSdk.TestingFloor;
 
 namespace BoatAttack.Telemetry
 {
@@ -24,6 +24,7 @@ namespace BoatAttack.Telemetry
             _boat = GetComponent<Boat>();
             _raceId = Guid.NewGuid().ToString("N");
             Tf.RegisterContextProvider(this);
+            Tf.RegisterStateProvider(new RaceTelemetryState(_boat));
             Tf.SetPositionSource(transform);
             Tf.UseMainCamera();
             Tf.SetMovementTrackingEnabled(true);
@@ -99,6 +100,10 @@ namespace BoatAttack.Telemetry
             var other = collision.collider.GetComponentInParent<Boat>();
             var evt = Tf.Track("boat_collision").Set("collision.kind", other ? "boat" : "environment")
                 .Set("collision.relative_speed_mps", collision.relativeVelocity.magnitude);
+            var opponent = other ? other.GetComponent<OpponentBoatTelemetry>() : null;
+            if (opponent)
+                evt.Set("collision.other_boat_id", opponent.ObjectId)
+                    .Set("collision.other_boat_label", opponent.Label);
             if (collision.contactCount > 0)
             {
                 var p = collision.GetContact(0).point;
@@ -110,8 +115,7 @@ namespace BoatAttack.Telemetry
         public void FillSnapshot(ref ContextSnapshot snapshot)
         {
             snapshot.Set("level.id", DemoTelemetry.LevelId);
-            snapshot.Set("app.version", DemoTelemetry.Version);
-            snapshot.Set("demo.control_mode", DemoTelemetry.Autoplay ? "ai_demo" : "human");
+            snapshot.Set("game_level.id", DemoTelemetry.LevelId);
             snapshot.Set("race.id", _raceId);
             snapshot.Set("race.phase", _finished ? "finished" : _started ? "racing" : "countdown");
             snapshot.Set("race.elapsed_s", RaceManager.RaceTime);
@@ -120,12 +124,6 @@ namespace BoatAttack.Telemetry
             snapshot.Set("race.lap_progress", _boat.LapPercentage);
             snapshot.Set("boat.speed_mps", _boat.engine ? _boat.engine.VelocityMag : 0);
             snapshot.Set("boat.off_course", _offCourse);
-            if (RaceManager.RaceData != null)
-            {
-                snapshot.Set("race.lap_count", RaceManager.RaceData.laps);
-                snapshot.Set("race.boat_count", RaceManager.RaceData.boatCount);
-                snapshot.Set("race.reversed", RaceManager.RaceData.reversed);
-            }
         }
 
         private void OnDestroy()
@@ -134,6 +132,7 @@ namespace BoatAttack.Telemetry
             Tf.ClearPositionSource();
             Tf.ClearCameraSource();
             Tf.RegisterContextProvider(null);
+            Tf.RegisterStateProvider(null);
         }
     }
 }

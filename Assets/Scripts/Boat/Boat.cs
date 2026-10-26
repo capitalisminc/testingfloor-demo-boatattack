@@ -62,8 +62,17 @@ namespace BoatAttack
             Colorize(livery);
             _completedCheckpointsThisLap = new SortedSet<int>();
             _allCheckPoints = WaypointGroup.Instance.GetCheckpointIndices();
-            if (isHuman && player == 1 && !TryGetComponent<Telemetry.BoatTelemetry>(out _))
-                gameObject.AddComponent<Telemetry.BoatTelemetry>();
+            if (isHuman && player == 1)
+            {
+                if (!TryGetComponent<Telemetry.BoatTelemetry>(out _))
+                    gameObject.AddComponent<Telemetry.BoatTelemetry>();
+            }
+            else
+            {
+                if (!TryGetComponent<Telemetry.OpponentBoatTelemetry>(out var opponent))
+                    opponent = gameObject.AddComponent<Telemetry.OpponentBoatTelemetry>();
+                opponent.Initialize(player);
+            }
         }
 
         private void SwitchToAiController()
@@ -221,12 +230,15 @@ namespace BoatAttack
             {
                 var resetMatrix = WaypointGroup.Instance.GetClosestPointOnWaypoint(transform.position);
                 var previousPosition = engine.RB.position;
+                var opponent = GetComponent<Telemetry.OpponentBoatTelemetry>();
+                opponent?.BeginReset();
                 var resetPoint = resetMatrix.GetPosition();
                 resetPoint.y = _spawnHeight;
                 engine.RB.linearVelocity = Vector3.zero;
                 engine.RB.angularVelocity = Vector3.zero;
                 engine.RB.position = resetPoint;
                 engine.RB.rotation = resetMatrix.rotation;
+                opponent?.EndReset();
                 GetComponent<Telemetry.BoatTelemetry>()?.ResetBoat(previousPosition, resetPoint);
             }
         }

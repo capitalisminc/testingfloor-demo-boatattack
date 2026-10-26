@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
-using TestingFloor;
+using TestingFloorSdk;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditor.Build;
@@ -33,7 +33,7 @@ namespace BoatAttack.Telemetry.Editor
                 settings.writeKey = localWriteKey;
                 settings.enabled = true;
             }
-            DemoTelemetry.ConfigureMovementTracking(settings);
+            DemoTelemetry.ConfigureTracking(settings);
             settings.logErrors = true;
             EditorUtility.SetDirty(settings);
             PlayerSettings.bundleVersion = DemoTelemetry.Version;
@@ -71,33 +71,34 @@ namespace BoatAttack.Telemetry.Editor
                 var size = Mathf.Max(bounds.size.x, bounds.size.z);
                 var center = bounds.center;
                 const int resolution = 2048;
+                const float cameraHeight = 1000f;
                 Directory.CreateDirectory("Artifacts/maps");
                 var cameraObject = new GameObject("Testing Floor map camera");
                 var camera = cameraObject.AddComponent<Camera>();
                 var texture = new RenderTexture(resolution, resolution, 24, RenderTextureFormat.ARGB32);
                 var pixels = new Texture2D(resolution, resolution, TextureFormat.RGB24, false);
-                var ocean = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                ocean.name = "Testing Floor map ocean";
-                ocean.transform.position = new Vector3(center.x, 0.05f, center.z);
-                ocean.transform.localScale = new Vector3(size / 10f, 1, size / 10f);
-                var oceanMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-                oceanMaterial.SetColor("_BaseColor", new Color(0.08f, 0.43f, 0.48f));
-                ocean.GetComponent<Renderer>().sharedMaterial = oceanMaterial;
                 var previousTarget = RenderTexture.active;
                 var previousFog = RenderSettings.fog;
+                var pipeline = (UniversalRenderPipelineAsset)GraphicsSettings.currentRenderPipeline;
+                var previousShadowDistance = pipeline.shadowDistance;
                 try
                 {
                     RenderSettings.fog = false;
-                    camera.transform.SetPositionAndRotation(new Vector3(center.x, 200, center.z), Quaternion.LookRotation(Vector3.down, Vector3.forward));
-                    camera.orthographic = true;
-                    camera.orthographicSize = size * 0.5f;
-                    camera.nearClipPlane = 0.3f;
-                    camera.farClipPlane = 600f;
+                    pipeline.shadowDistance = cameraHeight + size;
+                    camera.transform.SetPositionAndRotation(new Vector3(center.x, cameraHeight, center.z), Quaternion.LookRotation(Vector3.down, Vector3.forward));
+                    // The water shader uses perspective depth. Match the map bounds at sea level.
+                    camera.orthographic = false;
+                    camera.fieldOfView = 2f * Mathf.Atan(size * 0.5f / cameraHeight) * Mathf.Rad2Deg;
+                    camera.nearClipPlane = 1f;
+                    camera.farClipPlane = cameraHeight + 600f;
                     camera.clearFlags = CameraClearFlags.SolidColor;
                     camera.backgroundColor = new Color(0.13f, 0.48f, 0.54f);
                     camera.cullingMask = ~LayerMask.GetMask("UI", "3DSkybox", "Player1", "Player2", "Player3", "Player4");
                     camera.targetTexture = texture;
-                    camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
+                    var cameraData = camera.GetUniversalAdditionalCameraData();
+                    cameraData.renderPostProcessing = true;
+                    cameraData.requiresDepthTexture = true;
+                    cameraData.requiresColorTexture = true;
                     var request = new UniversalRenderPipeline.SingleCameraRequest { destination = texture };
                     RenderPipeline.SubmitRenderRequest(camera, request);
                     RenderTexture.active = texture;
@@ -113,11 +114,10 @@ namespace BoatAttack.Telemetry.Editor
                 {
                     RenderTexture.active = previousTarget;
                     RenderSettings.fog = previousFog;
+                    pipeline.shadowDistance = previousShadowDistance;
                     UnityEngine.Object.DestroyImmediate(pixels);
                     UnityEngine.Object.DestroyImmediate(texture);
                     UnityEngine.Object.DestroyImmediate(cameraObject);
-                    UnityEngine.Object.DestroyImmediate(ocean);
-                    UnityEngine.Object.DestroyImmediate(oceanMaterial);
                 }
                 var config = new MapConfig
                 {

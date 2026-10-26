@@ -229,6 +229,10 @@
       },
       "metadata": [
         {
+          "label": "Other boat",
+          "path": "collision.other_boat_label"
+        },
+        {
           "label": "Impact (m/s)",
           "path": "collision.relative_speed_mps"
         },

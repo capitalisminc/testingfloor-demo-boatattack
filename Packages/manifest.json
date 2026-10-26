@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.testingfloor.unity-sdk": "https://github.com/capitalisminc/testingfloor-sdk-unity.git#9289fd30b562667cb40db41815006e49c2bc0f53",
+    "com.testingfloor.unity-sdk": "https://github.com/capitalisminc/testingfloor-sdk-unity.git#af5d3ce8414265701d68eb1165b50045eb20bb29",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.addressables": "2.8.0",
     "com.unity.ai.navigation": "2.0.9",
