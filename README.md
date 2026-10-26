@@ -1,98 +1,58 @@
 # Boat Attack × Testing Floor
 
-This is a [Testing Floor](https://testingfloor.com) demo fork of [Unity’s Boat Attack](https://github.com/Unity-Technologies/BoatAttack), instrumented to demonstrate gameplay capture, SDK telemetry, and spatial analytics in a playable Unity game.
+A playable reference for integrating [Testing Floor](https://testingfloor.com) into a Unity game, based on [Unity’s Boat Attack](https://github.com/Unity-Technologies/BoatAttack).
 
-The fork adds race, lap, checkpoint, collision, and movement events, an island map exporter, and reusable analytics presentation settings. The original game credits remain below, and the [Unity Companion License](LICENSE.md) is unchanged.
+Follow a race from gameplay events to spatial analytics and the corresponding recording. The example covers movement sampling, shared game context, checkpoints, lap times, collisions, resets, and an overhead map of the island.
 
-See [the demo guide](docs/testingfloor-demo.md) for local setup, events, map export, and build instructions. This fork uses Unity **6000.3.7f1** and pins the Testing Floor SDK to a published commit.
+## Play the game
 
----
+Clone with Git LFS so Unity can load the game’s art and other assets:
 
-**_Note:This repository uses GitLFS, to use this repo you need to pull via Git and make sure GitLFS is installed locally_**
+```sh
+git clone --branch testing-floor https://github.com/capitalisminc/testingfloor-demo-boatattack.git
+cd testingfloor-demo-boatattack
+git lfs pull
+```
 
-# Boat Attack
-###### Demo Project using the Universal RP from Unity3D
+Open the project in **Unity 6000.3.7f1**, choose **Tools → Testing Floor → Boat Attack → Open demo**, and press **Play**. Use **W/S** or **↑/↓** for throttle, **A/D** or **←/→** to steer, **R** to reset, and **F** to pause.
 
-[![Click for Youtube Video](https://media.githubusercontent.com/media/Verasl/BoatAttack/release/2019.3/Assets/Textures/UI/welcome-title.png)](https://drive.google.com/file/d/1PTNdhnqbhzSWUCfAinIefP5cfr6Dezuw/view)
+## Send telemetry to your game
 
-This Unity project has been created to aid the testing and development of Universal RP. The project is a small vertical slice of a boat racing game, complete with race-able boats and island environment.
+To explore the data in your own Testing Floor game:
 
-Feel free to post any issues, but know this is a 'as is' repo, it's meant more for discovery of how some of the Universal RP features work and a learning resource for some tricks.
+1. Copy [TestingFloor.local.example.json](TestingFloor.local.example.json) to `TestingFloor.local.json` and fill in your game’s telemetry `writeKey`.
+2. Choose **Tools → Testing Floor → Boat Attack → Configure from local settings**.
+3. Play a race, then open your game’s analytics in Testing Floor.
 
-**Project Features**:
-  * Uses Universal RP from Unity
-  * Mobile optimized, low poly, LODs, no compute
-  * C# Jobs buoyancy system
-  * Cinemachine camera setups
-  * Shader Graph usage
-  * Post-processing v3 with Volume blending
-  * Addressables asset management package
-  * Custom Universal RP rendering for planar reflections via [SRP callbacks](https://docs.unity3d.com/ScriptReference/Rendering.RenderPipelineManager.html)
-  * Custom SciptableRenderPass usage for WaterFX and Caustics
-  * Gerstner based water system in local package(WIP)
-  * Much more..
+The local settings file is already ignored by Git. The SDK is included in the project; you can also jump straight into the code to see how the integration works.
 
-[Demo Footage](https://drive.google.com/file/d/1PTNdhnqbhzSWUCfAinIefP5cfr6Dezuw/view)
+## Explore the integration
 
-# Usage
+| Start here | What it demonstrates |
+| --- | --- |
+| [BoatTelemetry.cs](Assets/TestingFloorDemo/BoatTelemetry.cs) | Track gameplay events and attach race state, player position, and camera context |
+| [DemoTelemetry.cs](Assets/TestingFloorDemo/DemoTelemetry.cs) | Configure the SDK and tune movement sampling for a fast-moving boat |
+| [Boat.cs](Assets/Scripts/Boat/Boat.cs) | Connect telemetry to existing checkpoint, lap, and reset logic |
+| [DemoTools.cs](Assets/TestingFloorDemo/Editor/DemoTools.cs) | Export an overhead image with the world bounds needed to align analytics |
+| [testingfloor-telemetry-schema.json](testingfloor-telemetry-schema.json) | Give events readable names and map gameplay properties to analytics |
 
-#### Getting the project
-via Git:
-  1. Make sure you have GitLFS installed, check [here](https://git-lfs.github.com) for details.
-  2. Clone the repo as usual via cmd/terminal or in your favourite Git GUI software.
-  3. Checkout the branch that matches the Unity verison you are using, eg `release/2019.3`
+The [integration guide](docs/testingfloor-demo.md) walks through these patterns and how to adapt them to your game.
 
-Downloadable zips:
-  1. [2019.3 Project (Unity 2019.3f5)](https://drive.google.com/file/d/1vXpbVC36GHnyC-Eitl1WpLay9l_YqJGQ/view?usp=sharing)
+## Things to investigate
 
-#### Load the project:
-Once you have the project files locally you can load the project, ideally in the Unity version that is noted in the `ProjectSettings/ProjectVersion.txt` for the best experience.
-Upon loading the project will display a small welcome screen with some buttons to load starting scenes.
+- Find the corners with the most collisions, then inspect the recordings to see what happened.
+- Compare boat speed around the island using a heatmap of movement events.
+- Look at missed checkpoints, rejected laps, and resets to find where players lose their way.
 
-Scenes worth noting:
- - `scenes/main_menu.unity` - Starting menu scene if you want to have a full play-through of the demo.
- - `scenes/demo_island.unity` - Setup to play in the editor and go straight into an AI based race.
- - `scenes/_levels/level_Island.unity` - The scene loaded when entering from the main menu.
- - `scenes/Testing/***.unity` - Assorted test scenes, these are in need of updating and come as is.
+## About Boat Attack
 
-#### Build the project:
-One thing to make sure you do before building is make sure to build the addressable assets, this can be done via the addressables window, for more information please checkout the addressables [package documentation](https://docs.unity3d.com/Packages/com.unity.addressables@latest).
-Once the addressable assets are built you can continue to build a player as usual.
+Boat Attack is Unity’s boat-racing sample for the Universal Render Pipeline, with an island course, buoyancy, water effects, and AI opponents. See the [original project](https://github.com/Unity-Technologies/BoatAttack) for its rendering features and history.
 
-One thing to mention is not all controls and platforms have been tested, especially for the menu work. if you want to just see the project running on a device you can add the `scenes/demo_island.unity` scene to the build list and disable/remove the others.
+Original game credits:
 
-# Todo
+- [Andre McGrail](http://www.andremcgrail.com) — design, programming, modeling, textures, SFX
+- [Alex Best](https://big_ally.artstation.com) — modeling, textures
+- [Stintah](https://soundcloud.com/stintah) — soundtrack
+- [Felipe Lira](https://github.com/phi-lira) and [Tim Cooper](https://github.com/stramit) — render pipeline work and support
 
-As this project is on going there is a lot more left that needs to be worked on, so I repeat this is not a resource for production ready workflow ideas or systems and lots of it was put together very quickly.
-
-Some of the things left to do:
- * Make water system more modular and improve UX
- * Improve boat AI
- * Add imposter rendering for vegetation
- * Cleanup menu system to switch between Demoing/Playing/Benchmarking
- * Implement Unity Physics
- * Optimize cross platform performance and stability
- * Continue code cleanup
- * Wiki explaining features/systems in more depth
- * Add more sizzle....
-
-![Sunny Island](https://gdurl.com/STO1)
-
-# Credits
-[Andre McGrail](http://www.andremcgrail.com) - Design, Programming, Modeling, Textures, SFX
-
-[Alex Best](https://big_ally.artstation.com) - Modeling, Textures
-
-[Stintah](https://soundcloud.com/stintah) - Soundtrack
-
-Special thanks to:
-
-[Felipe Lira](https://github.com/phi-lira) - For Making Universal RP & LWRP
-
-[Tim Cooper](https://github.com/stramit) - Assorted SRP code help
-
-And thanks to many more who have helped with suggestions and feedback!
-
-# Notes
-
-*Make sure you clone the repo as downloading the zip will not contain the GitLFS files(all textures/meshes etc)
+[Unity Companion License](LICENSE.md)

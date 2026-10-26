@@ -1,107 +1,132 @@
-# Testing Floor demo
+# Unity integration reference
 
-This fork adds telemetry to the first human player's boat. The other boats retain their original gameplay logic. Open `Assets/scenes/demo_Island.unity` to race immediately; the upstream menus are optional.
+This guide follows the Testing Floor integration in Boat Attack. Use it alongside [BoatTelemetry.cs](../Assets/TestingFloorDemo/BoatTelemetry.cs), which contains most of the example, and the [Unity SDK documentation](https://github.com/capitalisminc/testingfloor-sdk-unity/blob/9289fd30b562667cb40db41815006e49c2bc0f53/README.md) for the full API.
 
-## Setup
+For instructions to play the game or connect your write key, start with the [README](../README.md).
 
-1. Clone with Git LFS and run `git lfs pull`.
-2. Open with Unity **6000.3.7f1**. The package manifest pins the published Testing Floor Unity SDK; no sibling checkout is required.
-3. Copy `TestingFloor.local.example.json` to `TestingFloor.local.json`. Enter your telemetry write key, organization slug, and game ID.
-4. Run **Tools → Testing Floor → Boat Attack → Configure from local settings**, then **Open demo** and press Play.
+## Connect the player and camera
 
-The `.env`, local JSON, generated settings asset, and `Artifacts` directory are ignored by Git. Keep the API upload token in `.env`; the editor reads only `TESTING_FLOOR_WRITE_KEY` from it and embeds that telemetry key in the generated settings asset. The API token is never included in player builds. The settings asset is included in local player builds so they can send telemetry. Do not commit it. `TESTING_FLOOR_WRITE_KEY` and `TESTING_FLOOR_ENDPOINT` can override the key and endpoint at runtime. Editor Play reads the local JSON directly.
+[Boat.cs](../Assets/Scripts/Boat/Boat.cs) attaches `BoatTelemetry` when it creates the first player’s boat. In `Awake`, the component registers its context provider and gives the SDK the boat transform and main camera:
 
-The demonstration currently uses `level.id = island` and `app.version = boatattack-tf-0.1.0`. Change the version in `DemoTelemetry.Version` and rerun Configure when publishing a changed level or build.
+```csharp
+using Tf = TestingFloor.TestingFloor;
 
-## Events and useful analytics
+Tf.RegisterContextProvider(this);
+Tf.SetPositionSource(transform);
+Tf.UseMainCamera();
+Tf.SetMovementTrackingEnabled(true);
+```
 
-| Event | Trigger / example use |
+The SDK attaches player coordinates, camera position, camera rotation, field of view, and viewport size to events. Movement tracking also emits `player_moved` samples as the boat travels around the island.
+
+This example observes one player. AI opponents still participate in the race, but do not emit their own streams of player movement events.
+
+## Add context once
+
+`BoatTelemetry` implements `ITelemetryContextProvider`. Its `FillSnapshot` method adds useful game state to every event:
+
+```csharp
+snapshot.Set("level.id", DemoTelemetry.LevelId);
+snapshot.Set("race.id", _raceId);
+snapshot.Set("race.lap", Mathf.Max(1, _boat.LapCount));
+snapshot.Set("race.place", _boat.Place);
+snapshot.Set("boat.speed_mps", _boat.engine ? _boat.engine.VelocityMag : 0);
+```
+
+A collision can then be analyzed by speed, lap, race position, or location without repeating those properties at each event call. The full provider also includes race phase, lap progress, elapsed race time, course state, and build version. The SDK adds device information and session identity.
+
+In your game, use the same pattern for state such as the current level, health, equipment, or objective. Keep the provider inexpensive: it runs when events are captured.
+
+## Track meaningful gameplay moments
+
+Emit events from the gameplay code that already knows something happened. For example, crossing a checkpoint calls:
+
+```csharp
+Tf.Track("checkpoint_reached")
+    .Set("checkpoint.index", index)
+    .Send();
+```
+
+The event identifies the moment and its checkpoint; the shared context supplies the rest of the race state.
+
+| Events | What you can learn |
 | --- | --- |
-| `race_loaded`, `race_started` | Countdown to race-start funnel |
-| `player_moved` | SDK movement samples, up to ten per second while moving, for paths and speed maps |
-| `checkpoint_reached` | First visit to a checkpoint each lap; segment progression |
-| `lap_completed` | Valid lap, with lap number and duration |
-| `lap_rejected` | Crossed start without all checkpoints; shortcut and navigation problems |
-| `race_completed` | Final place, duration, collision count and reset count |
-| `race_abandoned` | Player boat destroyed before finishing, including scene exit |
-| `boat_collision` | Impacts above 2 m/s, at most twice per second; other boat versus environment and contact coordinates |
-| `boat_reset`, `player_teleported` | Reset distance and SDK discontinuity for accurate paths |
-| `boat_off_course`, `boat_returned_to_course` | Crossed track width plus 5 m; sampled twice per second |
-| `game_paused`, `game_resumed` | Player pause controls |
+| `race_loaded`, `race_started` | How a session reaches the start of a race |
+| `checkpoint_reached` | Which checkpoints a player reaches, and in what order |
+| `lap_completed`, `lap_rejected` | Lap times and laps invalidated by missed checkpoints |
+| `race_completed`, `race_abandoned` | Finishing position, race duration, and early exits |
+| `boat_collision` | Where impacts happen, how fast they are, and whether another boat or scenery is involved |
+| `boat_off_course`, `boat_returned_to_course` | Where players leave the course and recover |
+| `boat_reset`, `player_teleported` | When and how far a player resets |
+| `game_paused`, `game_resumed` | Where pauses fit into the session |
+| `player_moved` | Movement paths and speed around the island |
 
-All events include race ID, race phase, lap, progress, place, elapsed time, boat speed in m/s, off-course state, level and version. The SDK adds player coordinates, camera pose/FOV, device metadata and analytics session identity. AI-controlled demo runs carry `demo.control_mode = ai_demo`; interactive runs carry `human`.
+Checkpoint events are emitted on the first visit to each checkpoint per lap. Collisions are recorded above a relative speed of 2 m/s, with a half-second cooldown. These are examples of choosing events that describe player behavior without recording every physics callback.
 
-The game opts into SDK movement tracking with a 0.1-second minimum ping interval and a 0.5-meter movement threshold. The runtime and editor setup share this configuration. At typical racing speeds of about 10 m/s, this gives roughly one meter between samples; the SDK’s 0.5-second default interval would leave about five meters between samples.
+## Choose movement density for your game
 
-Example demo stories: find the bend with the most environment collisions, compare speed through that bend, inspect the corresponding recording, identify missed checkpoints, and compare lap time before and after boat resets. Position units are meters and the map uses X/Z.
+[DemoTelemetry.ConfigureMovementTracking](../Assets/TestingFloorDemo/DemoTelemetry.cs) sets a **0.1-second minimum interval** and a **0.5-meter movement threshold**. At a racing speed of about 10 m/s, that produces samples roughly one meter apart.
 
-## Capture and session pairing
+Use the speed of your player and the scale of your map to choose a useful interval. A slower character may need fewer samples; a fast vehicle needs denser sampling to show its route through small heatmap cells. These settings control SDK movement events, so the game does not need a custom position timer.
 
-QR heartbeats are enabled by the example local settings for screen recordings. The SDK also accepts the recorder's standard `--testing-floor` launch payload or its session-payload file. That handoff pairs telemetry with the recording and normally suppresses the QR overlay. No custom recording/session identifiers are invented by this game. For external captures, leave QR heartbeats enabled.
+Boat resets use the SDK’s teleport API:
 
-## Telemetry field mappings
-
-`testingfloor-telemetry-schema.json` configures this game's level, build version, spatial coordinates and event presentation for analytics. Apply it with the schema CLI/API:
-
-```sh
-testingfloor set-telemetry-schema --organization-id YOUR_ORG --game-id YOUR_GAME --schema testingfloor-telemetry-schema.json
+```csharp
+Tf.RecordTeleport(start, end, "boat_reset");
 ```
 
-Use a `telemetry:configure` API token. The same JSON can also be applied in the game's Analytics settings schema editor.
+That records both ends of the jump and resets movement sampling at the destination. Use the same pattern for respawns, fast travel, or instant repositioning.
 
-## Analytics map
+## Put events on the map
 
-Stop Play and run **Tools → Testing Floor → Boat Attack → Export island analytics map**. This uses a flat ocean color and excludes sky/fog so coastlines remain readable. It renders an orthographic 2048px PNG covering the course with margins, plus `Artifacts/maps/testingfloor-maps.json`. The bounds come from the same camera used to render the image: +X is right, +Z is up, one world unit is one meter.
+With Play mode stopped, choose **Tools → Testing Floor → Boat Attack → Export island analytics map**. The exporter produces:
 
-Upload with an API token that has `maps:sync` (the telemetry write key cannot upload maps):
+- `Artifacts/maps/island.png` — an overhead image of the course.
+- `Artifacts/maps/testingfloor-maps.json` — the level, build version, and world bounds for that image.
 
-```sh
-TESTING_FLOOR_API_TOKEN=... npx @testingfloor/cli upload-map \
-  --config Artifacts/maps/testingfloor-maps.json
-```
+The image and bounds come from the same orthographic camera. Unity **X/Z** is the map plane: +X points right, +Z points up, and one world unit equals one meter. The exporter uses a flat ocean color and excludes fog and the sky so the course stays readable beneath analytics.
 
-The manifest uses your local organization/game and the same level/version emitted by the SDK.
-
-## Build and smoke run
-
-**Tools → Testing Floor → Boat Attack → Build macOS demo** builds Addressables and a development player at `Builds/BoatAttack.app`. Configure local settings first.
-
-For an automated race using the game's real AI and physics:
+Set `organizationId` and `gameId` in your local JSON before exporting for your own Testing Floor game. You can upload the result with the [Testing Floor CLI](https://github.com/capitalisminc/testingfloor-cli):
 
 ```sh
-UNITY=/Applications/Unity/Hub/Editor/6000.3.7f1/Unity.app/Contents/MacOS/Unity
-"$UNITY" -batchmode -projectPath "$PWD" \
-  -executeMethod BoatAttack.Telemetry.Editor.DemoSmokeTest.Run \
-  --tf-demo-autoplay -logFile Artifacts/smoke.log
+testingfloor upload-map --config Artifacts/maps/testingfloor-maps.json
 ```
 
-This runs for 90 seconds, checks that the race starts and the player boat travels at least 50 m and crosses the start line, captures a gameplay screenshot, and exits with the result. It sends genuine AI gameplay to the configured collector; use a test game/key when appropriate. It requires graphics support, so do not add `-nographics`. For a compiled player, `--tf-demo-autoplay` lets AI steer the observed player boat while retaining the player camera and race UI.
+This optional upload uses an API token with `maps:sync` access.
 
-## License
+The example has two coordinate sources:
 
-The game and assets retain Unity’s [Unity Companion License](../LICENSE.md). This fork does not change those permissions or represent the game as original Testing Floor work. The SDK has its own license in its package.
+| Source | Coordinates | Useful view |
+| --- | --- | --- |
+| `player_position` | `player.position.x/y/z` | Movement density or average `boat.speed_mps` for `player_moved` events |
+| `collision_position` | `collision.position.x/y/z` | Counts of `boat_collision` at the actual point of impact |
 
+Keeping impact coordinates separate from the boat’s center makes collision maps more useful around rocks, shorelines, and other boats.
 
-## Release builds and deployment
+## Make the analytics readable
 
-Store `TESTING_FLOOR_API_TOKEN` (with `builds:create`), `TESTING_FLOOR_WRITE_KEY`, the API URL and organization/game IDs in ignored `.env`. `.env.example` shows the fields without credentials.
-
-Batch release entry points are `BoatAttack.Telemetry.Editor.DemoTools.BuildReleaseMac` with `-buildTarget OSXUniversal`, and `BuildReleaseWindows` with `-buildTarget Win64`. Both disable development, script debugging and profiler connections, and build their platform's Addressables. macOS is universal (Intel/Apple Silicon); Windows is x64 Mono. Players default to borderless fullscreen at the display’s native resolution. Configure reapplies these display defaults before builds. Generated reports under `Artifacts/release` record the version and release flag.
-
-`testingfloor-builds.json` describes both upload folders and launch paths. After building, keep any `*_BurstDebugInformation_DoNotShip` directory outside those folders. Deploy using Node's environment-file support:
+[testingfloor-telemetry-schema.json](../testingfloor-telemetry-schema.json) provides the field mappings and presentation rules for this example. Apply it in your game’s Analytics settings schema editor, or with the CLI:
 
 ```sh
-node --env-file=.env /path/to/testingfloor-cli/bin/testingfloor.js upload-build \
-  --config testingfloor-builds.json --butler-path /path/to/butler
+testingfloor set-telemetry-schema \
+  --organization-id YOUR_ORG --game-id YOUR_GAME \
+  --schema testingfloor-telemetry-schema.json
 ```
 
-Release artifacts are under `Builds/Release/macOS` and `Builds/Release/Windows`. `.env` stays outside both upload roots.
+The CLI command uses an API token with `telemetry:configure` access. The configuration gives events readable titles, icons, colors, and relevant properties. For example, a `boat_collision` becomes “Collision with another boat” or “Hit scenery” according to `collision.kind`, and shows impact speed alongside the player’s speed and lap.
 
+Movement samples are marked as noise so they can be hidden when browsing individual gameplay moments while remaining available for spatial analysis. The configuration also maps `level.id`, build version, and the two coordinate sources to the map. When adapting this example, update these mappings to match the property names your game emits.
 
-## Presentation and map configuration
+The session timeline uses event timestamps. `race.elapsed_s` remains a gameplay property because the race clock pauses and resets between races.
 
-`testingfloor-telemetry-schema.json` is the reusable analytics configuration. It defines readable event names, icons, color families, event-specific metadata, conditional labels for boat versus scenery collisions, and noise treatment for movement and duplicate position-reset events. Race/checkpoint progress stays visible alongside collisions, off-course events, resets, pauses and early exits.
+## Connect telemetry to recordings
 
-The file also configures level/build matching, player and impact coordinates, environment fields and topline properties. It deliberately leaves the elapsed-game-time path unset: `race.elapsed_s` is a race clock that pauses/resets, so timeline timing uses event timestamps.
+When the Testing Floor recorder launches the game with a recording session, the SDK uses that handoff to associate telemetry with the recording. You can move from an interesting event or location to the corresponding footage.
 
-Apply the configuration with the CLI schema command and upload the matching island PNG/manifest. The API token in ignored `.env` needs `telemetry:configure` and `maps:sync` in addition to `builds:create` for deployments. The analytics map is pinned to the emitted build version and uses Unity X/Z meters. Player movement feeds speed maps; impact coordinates feed collision maps. Direct links for this local deployment are saved in ignored `Artifacts/analytics/views.json`.
+For external captures, the local example settings enable QR heartbeats. The visible QR gives Testing Floor timing information to align video and events. See the SDK’s [recording sync documentation](https://github.com/capitalisminc/testingfloor-sdk-unity/blob/9289fd30b562667cb40db41815006e49c2bc0f53/README.md#recording-sync) for the available controls.
+
+## Adapt the example
+
+Start with the player transform and camera, add a context provider for common game state, and track a few moments that answer questions about your game. Then export a map and use the presentation configuration to give those events useful names and properties.
+
+For a platformer, those moments might be deaths, checkpoints, and pickups. For an exploration game, they might be discoveries, interactions, and abandoned objectives. The same SDK and map patterns apply; the events should describe what matters in your game.
