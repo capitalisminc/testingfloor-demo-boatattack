@@ -1,11 +1,11 @@
 {
-  "version": "boatattack-tf-0.2.1",
+  "version": "boatattack-tf-0.3.0",
   "sourceRef": {
     "build_configuration": "release",
     "development": false,
     "unity_version": "6000.3.7f1",
     "scripting_backend": "Mono",
-    "sdk_version": "0.4.3"
+    "sdk_version": "0.6.0"
   },
   "builds": [
     {
